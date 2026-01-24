@@ -49,12 +49,12 @@ database
   .then((res) => {
     const version = res.version;
     const storageVersion = res.storageVersion;
-    logger.info("Version of Kùzu: " + version);
-    logger.info("Storage version of Kùzu: " + storageVersion);
+    logger.info("Version of Ladybug: " + version);
+    logger.info("Storage version of Ladybug: " + storageVersion);
     app.listen(PORT, () => {
       logger.info("Deployed server started on port: " + PORT);
     });
   })
   .catch((err) => {
-    logger.error("Error getting version of Kùzu: " + err);
+    logger.error("Error getting version of Ladybug: " + err);
   });

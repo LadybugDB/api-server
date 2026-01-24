@@ -1,22 +1,22 @@
-# Kùzu API Server
+# Ladybug API Server
 
-REST-style API server for the Kùzu graph database powered by Express.js.
+REST-style API server for the Ladybug graph database powered by Express.js.
 
 ## Get started
 
-Kùzu API Server is launched as a Docker container. Please refer to the [Docker documentation](https://docs.docker.com/get-docker/) for details on how to install and use Docker.
+Ladybug API Server is launched as a Docker container. Please refer to the [Docker documentation](https://docs.docker.com/get-docker/) for details on how to install and use Docker.
 
-To access an existing Kùzu database, you can mount its path to the `/database` directory as follows:
+To access an existing Ladybug database, you can mount its path to the `/database` directory as follows:
 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
-By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e KUZU_FILE={database file name}`,
-the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `KUZU_FILE` environment variable is not set, the API server will look for a file named `database.kz` in the mounted directory or create a new database file named `database.kz` in the mounted directory if it does not exist.
+By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e LBUG_FILE={database file name}`,
+the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `LBUG_FILE` environment variable is not set, the API server will look for a file named `database.kz` in the mounted directory or create a new database file named `database.kz` in the mounted directory if it does not exist.
 
 The `--rm` flag tells docker that the container should automatically be removed after we close docker.
 
@@ -25,7 +25,7 @@ If the launching is successful, you should see the logs similar to the following
 ```
 [00:46:50.833] INFO (1): Access mode: READ_WRITE
 [00:46:50.834] INFO (1): CORS enabled for all origins
-[00:46:50.853] INFO (1): Version of Kùzu: 0.3.1
+[00:46:50.853] INFO (1): Version of Ladybug: 0.3.1
 [00:46:50.854] INFO (1): Deployed server started on port: 8000
 ```
 
@@ -38,9 +38,9 @@ By default, the API server is launched in read-write mode, which means that you 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            -e MODE=READ_ONLY \
-           --rm kuzudb/api-server:latest
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 The API server will then be launched in read-only mode, and you will see the following log message:
@@ -53,16 +53,16 @@ In read-only mode, you can still issue read queries, but you cannot run write qu
 
 #### Buffer pool size
 
-By default, the API server is launched with a maximum buffer pool size of 80% of the available memory. If you want to launch API server with a different buffer pool size, you can do so by setting the `KUZU_BUFFER_POOL_SIZE` environment variable to the desired value in bytes as follows.
+By default, the API server is launched with a maximum buffer pool size of 80% of the available memory. If you want to launch API server with a different buffer pool size, you can do so by setting the `LBUG_BUFFER_POOL_SIZE` environment variable to the desired value in bytes as follows.
 
 For example, to launch the API server with a buffer pool size of 1GB, you can run the following command.
 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
-           -e KUZU_BUFFER_POOL_SIZE=1073741824 \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           -e LBUG_BUFFER_POOL_SIZE=1073741824 \
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 #### Cross-Origin Resource Sharing (CORS)
@@ -72,9 +72,9 @@ By default, the API server is launched with CORS enabled for all origins. If you
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            -e CROSS_ORIGIN=false \
-           --rm kuzudb/api-server:latest
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 ### Launch with Podman
@@ -86,8 +86,8 @@ For example:
 ```bash
 podman run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database:U \
-           -e KUZU_FILE={database file name} \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 or,
@@ -95,16 +95,16 @@ or,
 ```bash
 podman run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            --userns=keep-id \
-           --rm kuzudb/api-server:latest
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 Please refer to the official Podman docs for [mounting external volumes](https://docs.podman.io/en/latest/markdown/podman-run.1.html#mounting-external-volumes) and [user namespace mode](https://https://docs.podman.io/en/latest/markdown/podman-run.1.html#userns-mode) for more information.
 
 ## API endpoints
 
-The Kùzu API server provides the following endpoints:
+The Ladybug API server provides the following endpoints:
 
 ### `GET /`:
 
@@ -326,4 +326,4 @@ for both `amd64` and `arm64` platforms.
 
 ## Contributing
 
-We welcome contributions to Kùzu API Server. By contributing to Kùzu API Server, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+We welcome contributions to Ladybug API Server. By contributing to Ladybug API Server, you agree that your contributions will be licensed under the [MIT License](LICENSE).

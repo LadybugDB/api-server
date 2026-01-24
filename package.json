@@ -1,5 +1,5 @@
 {
-  "name": "kuzu-api-server",
+  "name": "lbug-api-server",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "kuzu": "0.11.2",
+    "lbug": "0.14.1",
     "pino": "^8.16.1",
     "pino-pretty": "^10.2.3"
   }
