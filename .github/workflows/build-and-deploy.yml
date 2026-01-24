@@ -36,7 +36,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: lbugdb/api-server:latest, lbugdb/api-server:${{ env.VERSION }}, ghcr.io/${{ env.OWNER }}/api-server:latest, ghcr.io/${{ env.OWNER }}/api-server:${{ env.VERSION }}
+          tags: ghcr.io/${{ env.OWNER }}/api-server:latest, ghcr.io/${{ env.OWNER }}/api-server:${{ env.VERSION }}
           build-args: |
             SKIP_GRAMMAR=true
             SKIP_BUILD_APP=true
