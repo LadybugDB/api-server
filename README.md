@@ -1,12 +1,12 @@
-# Kùzu API Server
+# Ladybug API Server
 
-REST-style API server for the Kùzu graph database powered by Express.js.
+REST-style API server for the Ladybug graph database powered by Express.js.
 
 ## Get started
 
-Kùzu API Server is launched as a Docker container. Please refer to the [Docker documentation](https://docs.docker.com/get-docker/) for details on how to install and use Docker.
+Ladybug API Server is launched as a Docker container. Please refer to the [Docker documentation](https://docs.docker.com/get-docker/) for details on how to install and use Docker.
 
-To access an existing Kùzu database, you can mount its path to the `/database` directory as follows:
+To access an existing Ladybug database, you can mount its path to the `/database` directory as follows:
 
 ```bash
 docker run -p 8000:8000 \
@@ -25,7 +25,7 @@ If the launching is successful, you should see the logs similar to the following
 ```
 [00:46:50.833] INFO (1): Access mode: READ_WRITE
 [00:46:50.834] INFO (1): CORS enabled for all origins
-[00:46:50.853] INFO (1): Version of Kùzu: 0.3.1
+[00:46:50.853] INFO (1): Version of Ladybug: 0.3.1
 [00:46:50.854] INFO (1): Deployed server started on port: 8000
 ```
 
@@ -104,7 +104,7 @@ Please refer to the official Podman docs for [mounting external volumes](https:/
 
 ## API endpoints
 
-The Kùzu API server provides the following endpoints:
+The Ladybug API server provides the following endpoints:
 
 ### `GET /`:
 
@@ -326,4 +326,4 @@ for both `amd64` and `arm64` platforms.
 
 ## Contributing
 
-We welcome contributions to Kùzu API Server. By contributing to Kùzu API Server, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+We welcome contributions to Ladybug API Server. By contributing to Ladybug API Server, you agree that your contributions will be licensed under the [MIT License](LICENSE).
