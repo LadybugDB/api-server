@@ -28,9 +28,9 @@ USER node
 # Set working directory
 WORKDIR /home/node/app
 
-# Install dependencies and reduce size of kuzu node module
+# Install dependencies and reduce size of lbug node module
 RUN npm install &&\
-    rm -rf node_modules/kuzu/prebuilt node_modules/kuzu/kuzu-source
+    rm -rf node_modules/lbug/prebuilt node_modules/lbug/lbug-source
 
 # Expose port
 EXPOSE 8000
@@ -38,7 +38,7 @@ EXPOSE 8000
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=8000
-ENV KUZU_DIR=/database
+ENV LBUG_DIR=/database
 ENV CROSS_ORIGIN=true
 
 # Run app

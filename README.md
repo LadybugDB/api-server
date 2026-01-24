@@ -11,12 +11,12 @@ To access an existing Kùzu database, you can mount its path to the `/database` 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           --rm lbugdb/api-server:latest
 ```
 
-By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e KUZU_FILE={database file name}`,
-the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `KUZU_FILE` environment variable is not set, the API server will look for a file named `database.kz` in the mounted directory or create a new database file named `database.kz` in the mounted directory if it does not exist.
+By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e LBUG_FILE={database file name}`,
+the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `LBUG_FILE` environment variable is not set, the API server will look for a file named `database.kz` in the mounted directory or create a new database file named `database.kz` in the mounted directory if it does not exist.
 
 The `--rm` flag tells docker that the container should automatically be removed after we close docker.
 
@@ -38,9 +38,9 @@ By default, the API server is launched in read-write mode, which means that you 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            -e MODE=READ_ONLY \
-           --rm kuzudb/api-server:latest
+           --rm lbugdb/api-server:latest
 ```
 
 The API server will then be launched in read-only mode, and you will see the following log message:
@@ -53,16 +53,16 @@ In read-only mode, you can still issue read queries, but you cannot run write qu
 
 #### Buffer pool size
 
-By default, the API server is launched with a maximum buffer pool size of 80% of the available memory. If you want to launch API server with a different buffer pool size, you can do so by setting the `KUZU_BUFFER_POOL_SIZE` environment variable to the desired value in bytes as follows.
+By default, the API server is launched with a maximum buffer pool size of 80% of the available memory. If you want to launch API server with a different buffer pool size, you can do so by setting the `LBUG_BUFFER_POOL_SIZE` environment variable to the desired value in bytes as follows.
 
 For example, to launch the API server with a buffer pool size of 1GB, you can run the following command.
 
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
-           -e KUZU_BUFFER_POOL_SIZE=1073741824 \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           -e LBUG_BUFFER_POOL_SIZE=1073741824 \
+           --rm lbugdb/api-server:latest
 ```
 
 #### Cross-Origin Resource Sharing (CORS)
@@ -72,9 +72,9 @@ By default, the API server is launched with CORS enabled for all origins. If you
 ```bash
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            -e CROSS_ORIGIN=false \
-           --rm kuzudb/api-server:latest
+           --rm lbugdb/api-server:latest
 ```
 
 ### Launch with Podman
@@ -86,8 +86,8 @@ For example:
 ```bash
 podman run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database:U \
-           -e KUZU_FILE={database file name} \
-           --rm kuzudb/api-server:latest
+           -e LBUG_FILE={database file name} \
+           --rm lbugdb/api-server:latest
 ```
 
 or,
@@ -95,9 +95,9 @@ or,
 ```bash
 podman run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
-           -e KUZU_FILE={database file name} \
+           -e LBUG_FILE={database file name} \
            --userns=keep-id \
-           --rm kuzudb/api-server:latest
+           --rm lbugdb/api-server:latest
 ```
 
 Please refer to the official Podman docs for [mounting external volumes](https://docs.podman.io/en/latest/markdown/podman-run.1.html#mounting-external-volumes) and [user namespace mode](https://https://docs.podman.io/en/latest/markdown/podman-run.1.html#userns-mode) for more information.

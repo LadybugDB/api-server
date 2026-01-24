@@ -1,3 +1,3 @@
 [submodule "explorer"]
 	path = explorer
-	url = https://github.com/kuzudb/explorer
+	url = https://github.com/lbugdb/explorer
