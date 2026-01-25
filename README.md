@@ -12,7 +12,7 @@ To access an existing Ladybug database, you can mount its path to the `/database
 docker run -p 8000:8000 \
            -v {path to the directory containing the database file}:/database \
            -e LBUG_FILE={database file name} \
-           --rm lbugdb/api-server:latest
+           --rm ghcr.io/ladybugdb/explorer:latest
 ```
 
 By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e LBUG_FILE={database file name}`,
