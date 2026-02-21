@@ -10,13 +10,14 @@ To access an existing Ladybug database, you can mount its path to the `/database
 
 ```bash
 docker run -p 8000:8000 \
-           -v {path to the directory containing the database file}:/database \
-           -e LBUG_FILE={database file name} \
-           --rm ghcr.io/ladybugdb/explorer:latest
+           -v ./demo:/database \
+           -e LBUG_FILE=demo.lbdb \
+           -e MODE=READ_ONLY \
+           --rm ghcr.io/ladybugdb/api-server:latest
 ```
 
 By mounting local database files to Docker via `-v {path to the directory containing the database file}:/database` and `-e LBUG_FILE={database file name}`,
-the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `LBUG_FILE` environment variable is not set, the API server will look for a file named `database.kz` in the mounted directory or create a new database file named `database.kz` in the mounted directory if it does not exist.
+the changes done through the API server will persist to the local database files after the server is shutdown. If the directory is mounted but the `LBUG_FILE` environment variable is not set, the API server will look for a file named `database.lbdb` in the mounted directory or create a new database file named `database.lbdb` in the mounted directory if it does not exist.
 
 The `--rm` flag tells docker that the container should automatically be removed after we close docker.
 
