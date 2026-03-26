@@ -16,6 +16,11 @@ const path = require("path");
 const router = express.Router();
 const database = require("./explorer/src/server/utils/Database");
 const logger = require("./explorer/src/server/utils/Logger");
+const snowball = require("snowball-stemmers");
+
+// Snowball stemmers (Russian + English)
+const stemmerRu = snowball.newStemmer("russian");
+const stemmerEn = snowball.newStemmer("english");
 
 // ─── Translation Dictionary (Wiktionary seed + auto-supplement) ─────────────
 
@@ -75,43 +80,89 @@ function getCluster(word) {
   return cluster ? [...cluster] : [low];
 }
 
-// Google Translate fallback (lazy-loaded)
-let translateFn = null;
-async function googleTranslate(text, from, to) {
-  if (!translateFn) {
-    try {
-      translateFn = require("translate-google-api");
-    } catch {
-      return null;
-    }
-  }
-  try {
-    const result = await translateFn(text, { from, to });
-    return typeof result === "string" ? result.toLowerCase() : (result?.[0] || "").toLowerCase();
-  } catch {
-    return null;
-  }
+// ─── Stem Index (morphological normalization for dict lookups) ───────────────
+
+const stemIndex = new Map(); // stem → [original dict keys]
+const trigramIndex = new Map(); // trigram → [key indices]
+let dictKeysArray = [];
+
+// Trigram extraction (Dice coefficient fuzzy matching)
+function trigrams(str) {
+  const s = "  " + str.toLowerCase() + " ";
+  const result = [];
+  for (let i = 0; i < s.length - 2; i++) result.push(s.substring(i, i + 3));
+  return result;
 }
 
-// Lookup with auto-supplement: dict first, then Google, then save back
-async function dictLookup(word) {
-  const low = word.toLowerCase();
-  // Layer 2: dict hit
-  if (translationDict[low]) return translationDict[low];
-  // Layer 3: Google Translate fallback
-  const isCyr = /[\u0400-\u04ff]/u.test(low);
-  const translated = await googleTranslate(low, isCyr ? "ru" : "en", isCyr ? "en" : "ru");
-  if (translated && translated !== low) {
-    // Auto-supplement: save to dict (RAM) + persist to file
-    translationDict[low] = [translated];
-    if (!translationDict[translated]) translationDict[translated] = [];
-    if (!translationDict[translated].includes(low)) translationDict[translated].push(low);
-    // Persist to disk + rebuild clusters
-    fs.writeFile(DICT_PATH, JSON.stringify(translationDict, null, 0), () => {});
-    buildClusters();
-    logger.info(`Dict auto-supplement: ${low} ↔ ${translated} (clusters rebuilt)`);
-    return [translated];
+function buildStemIndex() {
+  stemIndex.clear();
+  trigramIndex.clear();
+  dictKeysArray = Object.keys(translationDict);
+
+  for (let i = 0; i < dictKeysArray.length; i++) {
+    const key = dictKeysArray[i];
+    // Stem index
+    const s = isCyrillic(key) ? stemmerRu.stem(key) : stemmerEn.stem(key);
+    if (!stemIndex.has(s)) stemIndex.set(s, []);
+    stemIndex.get(s).push(key);
+    // Trigram index
+    for (const tg of trigrams(key)) {
+      if (!trigramIndex.has(tg)) trigramIndex.set(tg, []);
+      trigramIndex.get(tg).push(i);
+    }
   }
+
+  logger.info(`Stem index: ${stemIndex.size} stems, trigram index: ${trigramIndex.size} trigrams from ${dictKeysArray.length} keys`);
+}
+
+buildStemIndex();
+
+// Trigram fuzzy search (language-agnostic, works for both ru and en typos)
+function fuzzyTrigramLookup(word) {
+  const qTg = trigrams(word);
+  const scores = new Map();
+  for (const tg of qTg) {
+    const idxs = trigramIndex.get(tg);
+    if (!idxs) continue;
+    for (const idx of idxs) scores.set(idx, (scores.get(idx) || 0) + 1);
+  }
+
+  let bestIdx = -1, bestScore = 0;
+  for (const [idx, overlap] of scores) {
+    const keyTgLen = trigrams(dictKeysArray[idx]).length;
+    const score = (2 * overlap) / (qTg.length + keyTgLen); // Dice coefficient
+    if (score > bestScore) { bestScore = score; bestIdx = idx; }
+  }
+
+  if (bestIdx >= 0 && bestScore >= 0.4) {
+    return translationDict[dictKeysArray[bestIdx]] || [];
+  }
+  return [];
+}
+
+// Local dict lookup: exact → stem → trigram fuzzy (all local, sync, no network)
+function dictLookup(word) {
+  const low = word.toLowerCase();
+
+  // Layer 1: exact match (O(1))
+  if (translationDict[low]) return translationDict[low];
+
+  // Layer 2: stem match — handles morphological variants (O(1))
+  const s = isCyrillic(low) ? stemmerRu.stem(low) : stemmerEn.stem(low);
+  const stemCandidates = stemIndex.get(s);
+  if (stemCandidates && stemCandidates.length > 0) {
+    const translations = new Set();
+    for (const key of stemCandidates) {
+      for (const t of (translationDict[key] || [])) translations.add(t);
+    }
+    return [...translations];
+  }
+
+  // Layer 3: trigram fuzzy — handles typos in any language (~2ms over 91k keys)
+  if (low.length >= 4) {
+    return fuzzyTrigramLookup(low);
+  }
+
   return [];
 }
 
@@ -217,10 +268,10 @@ const HEBBIAN_EXPAND_THRESHOLD = 0.2;
 const HEBBIAN_EXPAND_TOP_K = 2;
 const VOTING_LIMIT = 20; // results per variant for voting
 
-// Truncate word to stem-like prefix (65% length, min 4 chars)
+// Snowball stemmer (proper morphological stemming for ru + en)
 function stem(word) {
-  if (word.length < 5) return word;
-  return word.substring(0, Math.max(4, Math.ceil(word.length * 0.65)));
+  if (word.length < 4) return word;
+  return isCyrillic(word) ? stemmerRu.stem(word) : stemmerEn.stem(word);
 }
 
 // Full pipeline: translate → stem → deduplicate
@@ -244,11 +295,11 @@ async function expandKeyword(kw) {
     }
   }
 
-  // Step 3: if dict had nothing for this word, try Google Translate
+  // Step 3: if dict had nothing for this word, try local fuzzy lookup
   const hasDictEntry = translationDict[kw] && translationDict[kw].length > 0;
   if (!hasDictEntry && kw.length >= 4) {
-    const googleHits = await dictLookup(kw);
-    for (const t of googleHits) {
+    const localHits = dictLookup(kw);
+    for (const t of localHits) {
       cluster = [...new Set([...cluster, t, ...getCluster(t)])];
     }
   }
@@ -353,7 +404,8 @@ async function votingSearch(variants, topK = SEARCH_LIMIT * 4) {
     const seen = new Set();
     // Dedup within one variant, count unique hits = IDF denominator
     const uniqueIds = new Set(rows.map((r) => r.id));
-    const weight = uniqueIds.size > 0 ? 1.0 / uniqueIds.size : 0;
+    // IDF weight capped: min denominator 2 prevents single-hit typo dominance
+    const weight = uniqueIds.size > 0 ? 1.0 / Math.max(uniqueIds.size, 2) : 0;
     for (const r of rows) {
       if (seen.has(r.id)) continue;
       seen.add(r.id);
