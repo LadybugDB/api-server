@@ -7,6 +7,7 @@ const logger = require("./explorer/src/server/utils/Logger");
 const schema = require("./explorer/src/server/Schema");
 const cypher = require("./explorer/src/server/Cypher");
 const state = require("./explorer/src/server/State");
+const memory = require("./memory");
 
 const CROSS_ORIGIN = process.env.CROSS_ORIGIN
   ? process.env.CROSS_ORIGIN.toLowerCase() === "true"
@@ -40,6 +41,7 @@ const MAX_PAYLOAD_SIZE = process.env.MAX_PAYLOAD_SIZE
 const api = express.Router();
 api.use("/schema", schema);
 api.use("/cypher", cypher);
+api.use("/memory", memory);
 api.use("/", state);
 app.use(express.json({ limit: MAX_PAYLOAD_SIZE }));
 app.use("/", api);
