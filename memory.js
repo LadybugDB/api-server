@@ -707,9 +707,10 @@ class HebbianTracker {
     this.dirtyConcepts.clear();
     this.dirtyEdges.clear();
 
-    try {
-      // Flush concepts
-      for (const kw of conceptsBatch) {
+    let flushedC = 0, flushedE = 0, failedC = 0, failedE = 0;
+    // Flush concepts (per-item error isolation)
+    for (const kw of conceptsBatch) {
+      try {
         const c = this.concepts.get(kw);
         if (c) {
           await runQuery(
@@ -718,14 +719,19 @@ class HebbianTracker {
               ` c.last_accessed = current_timestamp();`
           );
         } else {
-          // Concept was evicted/decayed — delete from DB
           await runQuery(
             `MATCH (c:Concept {id: "${esc(kw)}"}) DETACH DELETE c;`
           );
         }
+        flushedC++;
+      } catch (err) {
+        failedC++;
+        if (this.concepts.has(kw)) this.dirtyConcepts.add(kw);
       }
-      // Flush COOCCURS edges
-      for (const key of edgesBatch) {
+    }
+    // Flush COOCCURS edges (per-item error isolation)
+    for (const key of edgesBatch) {
+      try {
         const [a, b] = key.split("|");
         const edge = this.edges.get(key);
         if (edge) {
@@ -735,23 +741,26 @@ class HebbianTracker {
               ` SET r.weight = ${edge.weight}, r.count = ${edge.count};`
           );
         } else {
-          // Edge was pruned — delete from DB
           await runQuery(
-            `MATCH (a:Concept {id: "${esc(a)}"})-[r:COOCCURS]-(b:Concept {id: "${esc(b)}"}) DELETE r;`
+            `MATCH (a:Concept {id: "${esc(a)}"})-[r:COOCCURS]->(b:Concept {id: "${esc(b)}"}) DELETE r;`
           );
         }
+        flushedE++;
+      } catch (err) {
+        failedE++;
+        if (this.edges.has(key)) this.dirtyEdges.add(key);
       }
-      logger.info(
-        `Hebbian flushed: ${conceptsBatch.size} concepts, ${edgesBatch.size} edges`
-      );
-    } catch (err) {
-      logger.error("Hebbian flush failed: " + err.message);
-      // Re-add failed items to dirty sets for retry
-      for (const kw of conceptsBatch) this.dirtyConcepts.add(kw);
-      for (const key of edgesBatch) this.dirtyEdges.add(key);
-    } finally {
-      this._flushing = false;
     }
+    if (flushedC + flushedE > 0) {
+      logger.info(
+        `Hebbian flushed: ${flushedC} concepts, ${flushedE} edges` +
+          (failedC + failedE > 0 ? ` (failed: ${failedC}c, ${failedE}e)` : "")
+      );
+    }
+    if (failedC + failedE > 0 && flushedC + flushedE === 0) {
+      logger.error(`Hebbian flush: all failed (${failedC}c, ${failedE}e)`);
+    }
+    this._flushing = false;
   }
 
   getStats() {
